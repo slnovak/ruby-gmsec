@@ -3,11 +3,7 @@ class GMSEC::Connection
 
   bind GMSEC_MESSAGE_OBJECT: :message
 
-  attach_function :gmsec_CreateConnectionForConfig, [GMSEC::Config, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_Connect, [self, GMSEC::Status], :void
-  attach_function :gmsec_IsConnected, [self, GMSEC::Status], :int
-  attach_function :gmsec_Disconnect, [self, GMSEC::Status], :void
-  attach_function :gmsec_DestroyConnection, [self, GMSEC::Status], :void
+  has :status
 
 
   attach_function :gmsec_SetMsgKind(self, GMSEC_MSG_KIND kind, GMSEC_STATUS_OBJECT status)
@@ -30,6 +26,16 @@ class GMSEC::Connection
   protected
 
   def message
-    @message ||= nil
+
+    @message ||= begin
+
+       pointer = new_pointer
+
+       gmsec_CreateMessage(pointer, status)
+
+       pointer.read_pointer
+
+     end
+
   end
 end
