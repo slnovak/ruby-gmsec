@@ -1,4 +1,4 @@
-module GMSEC::API
+module GMSEC::Definitions
 
   GMSEC_AUTODISPATCH_EXCLUSIVE      = 37
   GMSEC_AUTODISPATCH_FAILURE        = 2
@@ -101,6 +101,8 @@ module GMSEC::API
   GMSEC_TYPE_ULONG                  = GMSEC_TYPE_U32
   GMSEC_TYPE_USHORT                 = GMSEC_TYPE_U16
 
+  # Will specify layout in `included`
+  class GMSEC_LOG_ENTRY < FFI::Struct; end
   class GMSEC_CONFIGFILED_STRUCT < FFI::Struct; end
   class GMSEC_CONFIG_STRUCT < FFI::Struct; end
   class GMSEC_CONNECTION_STRUCT < FFI::Struct; end
@@ -108,79 +110,82 @@ module GMSEC::API
   class GMSEC_MESSAGE_STRUCT < FFI::Struct; end
   class GMSEC_STATUS_STRUCT < FFI::Struct; end
 
-  typedef :char,        :GMSEC_CHAR
-  typedef :char,        :GMSEC_I8
-  typedef :double,      :GMSEC_F64
-  typedef :float,       :GMSEC_F32
-  typedef :long,        :GMSEC_I32
-  typedef :long_long,   :GMSEC_I64
-  typedef :pointer,     :GMSEC_BIN
-  typedef :pointer,     :GMSEC_BLOB
-  typedef :pointer,     :GMSEC_CONFIGFILED_OBJECT
-  typedef :pointer,     :GMSEC_CONFIGFILE_HANDLE
-  typedef :pointer,     :GMSEC_CONFIG_HANDLE
-  typedef :pointer,     :GMSEC_CONFIG_OBJECT
-  typedef :pointer,     :GMSEC_CONNECTION_HANDLE
-  typedef :pointer,     :GMSEC_CONNECTION_OBJECT
-  typedef :pointer,     :GMSEC_FIELD_HANDLE
-  typedef :pointer,     :GMSEC_FIELD_OBJECT
-  typedef :pointer,     :GMSEC_MESSAGE_HANDLE
-  typedef :pointer,     :GMSEC_MESSAGE_OBJECT
-  typedef :pointer,     :GMSEC_STATUS_HANDLE
-  typedef :pointer,     :GMSEC_STATUS_OBJECT
-  typedef :pointer,     :GMSEC_STR
-  typedef :pointer,     :GMSEC_STRING
-  typedef :short,       :GMSEC_I16
-  typedef :uchar,       :GMSEC_U8
-  typedef :ulong,       :GMSEC_U32
-  typedef :ulong_long,  :GMSEC_U64
-  typedef :ushort,      :GMSEC_CONNECTION_TYPE
-  typedef :ushort,      :GMSEC_STATUS_CLASS
-  typedef :ushort,      :GMSEC_TYPE
-  typedef :ushort,      :GMSEC_U16
+  def self.included(base)
 
-  typedef :GMSEC_F32,   :GMSEC_FLOAT
-  typedef :GMSEC_F64,   :GMSEC_DOUBLE
-  typedef :GMSEC_I16,   :GMSEC_SHORT
-  typedef :GMSEC_I32,   :GMSEC_LONG
-  typedef :GMSEC_I64,   :GMSEC_LONGLONG
-  typedef :GMSEC_U16,   :GMSEC_MSG_KIND
-  typedef :GMSEC_U16,   :GMSEC_USHORT
-  typedef :GMSEC_U32,   :GMSEC_ULONG
-  typedef :GMSEC_U64,   :GMSEC_ULONGLONG
+    base.instance_eval do
+      typedef :char,        :GMSEC_CHAR
+      typedef :char,        :GMSEC_I8
+      typedef :double,      :GMSEC_F64
+      typedef :float,       :GMSEC_F32
+      typedef :long,        :GMSEC_I32
+      typedef :long_long,   :GMSEC_I64
+      typedef :pointer,     :GMSEC_BIN
+      typedef :pointer,     :GMSEC_BLOB
+      typedef :pointer,     :GMSEC_CONFIGFILED_OBJECT
+      typedef :pointer,     :GMSEC_CONFIGFILE_HANDLE
+      typedef :pointer,     :GMSEC_CONFIG_HANDLE
+      typedef :pointer,     :GMSEC_CONFIG_OBJECT
+      typedef :pointer,     :GMSEC_CONNECTION_HANDLE
+      typedef :pointer,     :GMSEC_CONNECTION_OBJECT
+      typedef :pointer,     :GMSEC_FIELD_HANDLE
+      typedef :pointer,     :GMSEC_FIELD_OBJECT
+      typedef :pointer,     :GMSEC_MESSAGE_HANDLE
+      typedef :pointer,     :GMSEC_MESSAGE_OBJECT
+      typedef :pointer,     :GMSEC_STATUS_HANDLE
+      typedef :pointer,     :GMSEC_STATUS_OBJECT
+      typedef :pointer,     :GMSEC_STR
+      typedef :pointer,     :GMSEC_STRING
+      typedef :short,       :GMSEC_I16
+      typedef :uchar,       :GMSEC_U8
+      typedef :ulong,       :GMSEC_U32
+      typedef :ulong_long,  :GMSEC_U64
+      typedef :ushort,      :GMSEC_CONNECTION_TYPE
+      typedef :ushort,      :GMSEC_STATUS_CLASS
+      typedef :ushort,      :GMSEC_TYPE
+      typedef :ushort,      :GMSEC_U16
 
-  enum :GMSEC_BOOL, [
-    :GMSEC_FALSE,
-    :GMSEC_TRUE
-  ] 
+      typedef :GMSEC_F32,   :GMSEC_FLOAT
+      typedef :GMSEC_F64,   :GMSEC_DOUBLE
+      typedef :GMSEC_I16,   :GMSEC_SHORT
+      typedef :GMSEC_I32,   :GMSEC_LONG
+      typedef :GMSEC_I64,   :GMSEC_LONGLONG
+      typedef :GMSEC_U16,   :GMSEC_MSG_KIND
+      typedef :GMSEC_U16,   :GMSEC_USHORT
+      typedef :GMSEC_U32,   :GMSEC_ULONG
+      typedef :GMSEC_U64,   :GMSEC_ULONGLONG
 
-  enum :LOG_LEVEL, [
-    :logNONE,
-    :logERROR,
-    :logSECURE,
-    :logWARNING,
-    :logINFO,
-    :logVERBOSE,
-    :logDEBUG,
-    :logNLEVEL
-  ]
+      enum :GMSEC_BOOL, [
+        :GMSEC_FALSE,
+        :GMSEC_TRUE
+      ] 
 
-  callback :GMSEC_CALLBASE, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE], :void
-  callback :GMSEC_C_CALLBACK, [:GMSEC_CONNECTION_OBJECT, :GMSEC_MESSAGE_OBJECT], :void
-  callback :GMSEC_ERROR_CALLBACK, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE, :GMSEC_STATUS_HANDLE, :string], :void
-  callback :GMSEC_ERROR_CALLBACK, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE, :GMSEC_STATUS_HANDLE, :string], :void
-  callback :GMSEC_C_ERROR_CALLBACK, [:GMSEC_CONNECTION_OBJECT, :GMSEC_MESSAGE_OBJECT, :GMSEC_STATUS_OBJECT, :string], :void
-  callback :GMSEC_REPLY_CALLBACK, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE, :GMSEC_MESSAGE_HANDLE], :void
-  callback :GMSEC_C_REPLY_CALLBACK, [:GMSEC_CONNECTION_OBJECT, :GMSEC_MESSAGE_OBJECT, :GMSEC_MESSAGE_OBJECT], :void
-  callback :GMSEC_LOGGER_HANDLER, [:pointer], :void
+      enum :LOG_LEVEL, [
+        :logNONE,
+        :logERROR,
+        :logSECURE,
+        :logWARNING,
+        :logINFO,
+        :logVERBOSE,
+        :logDEBUG,
+        :logNLEVEL
+      ]
 
-  class GMSEC_LOG_ENTRY < FFI::Struct
-    layout(
-      file: :string,
-      line: :int,
-      level: :LOG_LEVEL,
-      time: :double,
-      message: :string)
+      callback :GMSEC_CALLBASE, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE], :void
+      callback :GMSEC_C_CALLBACK, [:GMSEC_CONNECTION_OBJECT, :GMSEC_MESSAGE_OBJECT], :void
+      callback :GMSEC_ERROR_CALLBACK, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE, :GMSEC_STATUS_HANDLE, :string], :void
+      callback :GMSEC_ERROR_CALLBACK, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE, :GMSEC_STATUS_HANDLE, :string], :void
+      callback :GMSEC_C_ERROR_CALLBACK, [:GMSEC_CONNECTION_OBJECT, :GMSEC_MESSAGE_OBJECT, :GMSEC_STATUS_OBJECT, :string], :void
+      callback :GMSEC_REPLY_CALLBACK, [:GMSEC_CONNECTION_HANDLE, :GMSEC_MESSAGE_HANDLE, :GMSEC_MESSAGE_HANDLE], :void
+      callback :GMSEC_C_REPLY_CALLBACK, [:GMSEC_CONNECTION_OBJECT, :GMSEC_MESSAGE_OBJECT, :GMSEC_MESSAGE_OBJECT], :void
+      callback :GMSEC_LOGGER_HANDLER, [:pointer], :void
+    end
+
+    base::GMSEC_LOG_ENTRY.layout(
+      file:     :string,
+      line:     :int,
+      level:    base.find_type(:LOG_LEVEL),
+      time:     :double,
+      message:  :string)
+
   end
-
 end
