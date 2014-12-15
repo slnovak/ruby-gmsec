@@ -1,15 +1,8 @@
 class GMSEC::Status
   extend GMSEC::API
 
-  bind GMSEC_STATUS_OBJECT: :status
-
-
-  def initialize(native_value: nil)
-
-    if native_value
-      @native_object = native_value
-    end
-
+  bind :GMSEC_STATUS_OBJECT do |pointer|
+    gmsec_CreateStatus(pointer)
   end
 
 
@@ -29,21 +22,6 @@ class GMSEC::Status
 
 
   protected
-
-
-  def status
-
-    @status ||= begin
-
-      pointer = new_pointer
-
-      gmsec_CreateStatus(pointer)
-
-      pointer.read_pointer
-
-    end
-
-  end
 
 
   attach_function :gmsec_CreateStatus, [:pointer], :void

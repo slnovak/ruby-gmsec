@@ -1,7 +1,10 @@
 class GMSEC::Field
   extend GMSEC::API
 
-  bind GMSEC_FIELD_OBJECT: :field
+  bind :GMSEC_FIELD_OBJECT do |pointer|
+     gmsec_CreateField(pointer, status)
+  end
+  
 
   has :status
 
@@ -53,11 +56,7 @@ class GMSEC::Field
      Float      => :double }
 
   
-  def initialize(name=nil, value=nil, native_value: nil)
-
-    if native_value
-      @field = native_value
-    end
+  def initialize(name=nil, value=nil)
 
     if name
       self.name = name
@@ -72,17 +71,9 @@ class GMSEC::Field
 
   def name
 
-    buffer = FFI::Buffer.new(1024)
-
-    pointer = FFI::MemoryPointer.new(buffer)
-
-    gmsec_GetFieldName(self, pointer, status)
-
-    pointer.read_pointer.read_string_to_null unless status.is_error?
-
-  ensure
-
-    buffer.clear
+    with_string_buffer do |pointer|
+      gmsec_GetFieldName(self, pointer, status)
+    end
 
   end
 
@@ -145,21 +136,6 @@ class GMSEC::Field
   protected
 
 
-  def field
-
-    @field ||= begin
-
-       pointer = new_pointer
-
-       gmsec_CreateField(pointer, status)
-
-       pointer.read_pointer
-
-     end
-
-  end
-
-
   def set_field_value_method(value)
     # Given a Ruby value, return the name of the corresponding SetFieldValue* method.
 
@@ -184,7 +160,7 @@ class GMSEC::Field
     when :char
       pointer.read_char
     when :bool
-      pointer.read_int > 0
+      pointer.read_int == self.class.enum_type(:GMSEC_BOOL)[:GMSEC_TRUE]
     when :short
       pointer.read_short
     when :ushort

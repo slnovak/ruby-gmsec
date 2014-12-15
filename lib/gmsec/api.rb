@@ -6,7 +6,28 @@ module GMSEC::API
 
     def initialize(*args, **kwargs)
       ObjectSpace.define_finalizer(self, self.class.method(:destroy!).to_proc)
-      super(*args, **kwargs)
+
+      # If there is a `native_value` keyword argument supplied, assign
+      # the value to native_object
+      if native_object = kwargs.delete(:native_object)
+
+        @native_object = native_object
+
+      else
+
+        if respond_to? :native_object_initializer
+          initialize_native_object do |pointer|
+            native_object_initializer(pointer)
+          end
+        end
+
+      end
+
+      if kwargs.empty?
+        super(*args)
+      else
+        super(*args, **kwargs)
+      end
     end
 
   end
@@ -20,12 +41,12 @@ module GMSEC::API
     class << base
 
       def to_native(value, context)
-        value.native_object
+        value.instance_variable_get("@native_object")
       end
 
 
       def from_native(value, context)
-        new(native_value: value)
+        new(native_object: value)
       end
 
 
@@ -48,25 +69,67 @@ module GMSEC::API
   end
 
 
-  def bind(opts)
-
-    object_name, attr = opts.to_a.first
+  def bind(object_name, &block)
 
     native_type find_type(object_name)
 
-    # Delegate native_object to `attr`
-    define_method(:native_object) do
-      self.send(attr)
+    if block_given?
+      define_method(:native_object_initializer, &block)
     end
 
-    # Create a new pointer to an instance of the class.
-    define_method(:new_pointer) do
-      FFI::MemoryPointer.new(self.class.native_type)
-    end
+    protected
 
     # Proxy #find_type through class
     define_method(:find_type) do |type|
       self.class.find_type(type)
+    end
+
+
+    define_method(:initialize_native_object) do |&block|
+
+      instance_eval do
+
+        pointer = FFI::MemoryPointer.new(self.class.native_type)
+
+        block.call(pointer)
+
+        @native_object = pointer.read_pointer
+
+      end
+
+    end
+
+
+    define_method(:with_string_buffer) do |*sizes, &block|
+
+      if sizes.empty?
+        sizes = [1024]
+      end
+
+      begin
+
+        buffers = sizes.map{|size| FFI::Buffer.new(size)}
+
+        pointers = buffers.map{|buffer| FFI::MemoryPointer.new(buffer)}
+
+        block.call(*pointers)
+
+        strings = pointers.map{|pointer| pointer.read_pointer.read_string_to_null}
+
+        if strings.length == 1
+          strings.first
+        else
+          strings
+        end
+
+      ensure
+
+        buffers.each do |buffer|
+          buffer.clear
+        end
+        
+      end
+
     end
 
   end

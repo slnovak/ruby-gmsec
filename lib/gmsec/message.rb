@@ -1,18 +1,13 @@
 class GMSEC::Message
   extend GMSEC::API
-  include Enumerable
-
-  bind GMSEC_MESSAGE_OBJECT: :message
 
   has :status
 
+  bind :GMSEC_MESSAGE_OBJECT
 
-  def initialize(data=nil, subject: nil, type: nil, native_value: nil)
 
-    if native_value
-      @message = native_value
-    end
-
+  def initialize
+    @native_object = FFI::MemoryPointer.new(self.class.native_type)
   end
 
 
@@ -60,13 +55,9 @@ class GMSEC::Message
 
   def subject
 
-    buffer = FFI::Buffer.new(1024)
-
-    pointer = FFI::MemoryPointer.new(buffer)
-
-    gmsec_GetMsgSubject(self, pointer, status)
-
-    pointer.read_pointer.read_string_to_null unless status.is_error?
+    with_string_buffer do |pointer|
+      gmsec_GetMsgSubject(self, pointer, status)
+    end
 
   end
 
@@ -86,17 +77,8 @@ class GMSEC::Message
   end
 
 
-  def add_field(name, value)
-
-    field = GMSEC::Field.new(name, value)
-
-    gmsec_MsgAddField(self, field, status)
-
-  end
-
-
   def clear_field(name)
-    gmsec_MsgClearField(self, name, status)
+    gmsec_MsgClearField(self, name.to_s, status)
   end
 
 
@@ -104,7 +86,7 @@ class GMSEC::Message
 
     field = GMSEC::Field.new
 
-    gmsec_MsgGetField(self, name, field, status)
+    gmsec_MsgGetField(self, name.to_s, field, status)
 
     field
 
@@ -120,7 +102,7 @@ class GMSEC::Message
 
     elsif data.is_a? Hash
 
-      hash.each do |key, value|
+      data.each do |key, value|
         self << GMSEC::Field.new(key, value)
       end
 
@@ -144,34 +126,35 @@ class GMSEC::Message
   end
 
 
-  def each(&block)
+  def fields
 
-    field = GMSEC::Field.new
+    Enumerator.new do |y|
 
-    gmsec_MsgGetFirstField(self, field, status)
+      field = GMSEC::Field.new
 
-    yield field
+      gmsec_MsgGetFirstField(self, field, status)
 
-    (length-1).times do
+      while 
+        y << field
 
-      gmsec_MsgGetNextField(self, field, status)
-
-      yield field
+        gmsec_MsgGetNextField(self, field, status)
+      end
 
     end
 
   end
 
 
+  def to_h
+    Hash[fields.map{|field| [field.key, field.value]}]
+  end
+
+
   def to_xml
 
-    buffer = FFI::Buffer.new(8*1024)
-
-    pointer = FFI::MemoryPointer.new(buffer)
-
-    gmsec_MsgToXml(self, pointer, status)
-
-    pointer.read_pointer.read_string_to_null unless status.is_error?
+    with_string_buffer(8*1024) do |pointer|
+      gmsec_MsgToXML(self, pointer, status)
+    end
 
   end
 
@@ -198,21 +181,6 @@ class GMSEC::Message
 
 
   protected
-
-
-  def message
-
-    @message ||= begin
-
-       pointer = new_pointer
-
-       gmsec_CreateMessage(pointer, status)
-
-       pointer.read_pointer
-
-     end
-
-  end
 
 
   attach_function :gmsec_SetMsgKind, [self, :GMSEC_MSG_KIND, GMSEC::Status], :void

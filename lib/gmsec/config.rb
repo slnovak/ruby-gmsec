@@ -1,16 +1,15 @@
 class GMSEC::Config
   extend GMSEC::API
 
-  bind GMSEC_CONFIG_OBJECT: :config
-
   has :status
 
 
-  def initialize(options={}, native_value: nil)
+  bind :GMSEC_CONFIG_OBJECT do |pointer|
+    gmsec_CreateConfig(pointer, status)
+  end
 
-    if native_value
-      @config = native_value
-    end
+
+  def initialize(options={})
 
     options.each do |key, value|
       add_value(key, value)
@@ -51,6 +50,10 @@ class GMSEC::Config
 
         gmsec_ConfigGetNext(self, key_pointer, value_pointer, status)
 
+        unless [GMSEC_STATUS_NO_ERROR, GMSEC_CONFIG_END_REACHED].include? status.code
+          raise RuntimeError.new "Error when reading config: #{status}"
+        end
+
         key = key_pointer.read_pointer.read_string_to_null unless status.is_error?
         value = value_pointer.read_pointer.read_string_to_null unless status.is_error?
 
@@ -62,21 +65,6 @@ class GMSEC::Config
 
 
   protected
-
-
-  def config
-
-    @config ||= begin
-
-      @pointer = new_pointer
-
-      gmsec_CreateConfig(@pointer, status)
-
-      @pointer.read_pointer
-
-    end
-
-  end
 
 
   def add_value(key, value)
