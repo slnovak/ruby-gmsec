@@ -1,9 +1,21 @@
 module GMSEC::API
 
+  module Finalizer
+
+    # Allows us to specify #destroy! to be called on an instance during GC.
+
+    def initialize(*args, **kwargs)
+      ObjectSpace.define_finalizer(self, self.class.method(:destroy!).to_proc)
+      super(*args, **kwargs)
+    end
+
+  end
+
   def self.extended(base)
     base.extend FFI::Library
     base.extend FFI::DataConverter
 
+    base.send :prepend, Finalizer
 
     class << base
 
@@ -19,6 +31,12 @@ module GMSEC::API
 
       def size
         find_type(native_type).size
+      end
+
+      def destroy!(instance)
+        if instance.respond_to? :destroy!
+          instance.destroy!
+        end
       end
 
     end
@@ -74,7 +92,9 @@ module GMSEC::API
         instance_variable_set(name, instance_variable_get(name) || mapping[object].new)
 
       end
+
     end
+
   end
 
 
@@ -108,7 +128,9 @@ module GMSEC::API
           '/usr/{lib64,lib}']
 
       end
+
     end
+
   end
 
 
@@ -125,6 +147,7 @@ module GMSEC::API
       }).first
 
     end
+
   end
 
 
@@ -135,4 +158,5 @@ module GMSEC::API
     end
 
   end
+
 end

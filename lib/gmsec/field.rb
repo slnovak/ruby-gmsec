@@ -6,51 +6,6 @@ class GMSEC::Field
   has :status
 
 
-  attach_function :gmsec_CreateField, [:pointer, GMSEC::Status], :void
-  attach_function :gmsec_DestroyField, [:pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldName, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldName, [self, :string, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldType, [self, :GMSEC_TYPE, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldType, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueCHAR, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueBOOL, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueSHORT, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueUSHORT, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueLONG, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueULONG, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueFLOAT, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueDOUBLE, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueSTRING, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueSTR, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueI16, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueU16, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueI32, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueU32, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueF32, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueF64, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueSTRING, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_GetFieldValueI64, [self, :pointer, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueCHAR, [self, :GMSEC_CHAR, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueBOOL, [self, :GMSEC_BOOL, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueSHORT, [self, :GMSEC_SHORT, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueUSHORT, [self, :GMSEC_USHORT, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueLONG, [self, :GMSEC_LONG, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueULONG, [self, :GMSEC_ULONG, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueFLOAT, [self, :GMSEC_FLOAT, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueDOUBLE, [self, :GMSEC_DOUBLE, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueSTRING, [self, :GMSEC_STR, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueSTR, [self, :GMSEC_STR, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueI16, [self, :GMSEC_I16, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueU16, [self, :GMSEC_U16, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueI32, [self, :GMSEC_I32, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueU32, [self, :GMSEC_U32, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueF32, [self, :GMSEC_F32, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueF64, [self, :GMSEC_F64, GMSEC::Status], :void
-  attach_function :gmsec_SetFieldValueI64, [self, :GMSEC_I64, GMSEC::Status], :void
-  attach_function :gmsec_UnSetField, [self, GMSEC::Status], :void
-  attach_function :gmsec_LookupFieldType, [:string], :GMSEC_TYPE
-
-
   # Map GMSEC values to deftypes
   GMSEC_TYPEDEF = {
     GMSEC_TYPE_BOOL   => :bool,
@@ -98,7 +53,11 @@ class GMSEC::Field
      Float      => :double }
 
   
-  def initialize(name=nil, value=nil)
+  def initialize(name=nil, value=nil, native_value: nil)
+
+    if native_value
+      @field = native_value
+    end
 
     if name
       self.name = name
@@ -253,4 +212,50 @@ class GMSEC::Field
     end
 
   end
+
+
+  attach_function :gmsec_CreateField, [:pointer, GMSEC::Status], :void
+  attach_function :gmsec_DestroyField, [:pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldName, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldName, [self, :string, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldType, [self, :GMSEC_TYPE, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldType, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueCHAR, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueBOOL, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueSHORT, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueUSHORT, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueLONG, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueULONG, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueFLOAT, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueDOUBLE, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueSTRING, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueSTR, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueI16, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueU16, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueI32, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueU32, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueF32, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueF64, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueSTRING, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetFieldValueI64, [self, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueCHAR, [self, :GMSEC_CHAR, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueBOOL, [self, :GMSEC_BOOL, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueSHORT, [self, :GMSEC_SHORT, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueUSHORT, [self, :GMSEC_USHORT, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueLONG, [self, :GMSEC_LONG, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueULONG, [self, :GMSEC_ULONG, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueFLOAT, [self, :GMSEC_FLOAT, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueDOUBLE, [self, :GMSEC_DOUBLE, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueSTRING, [self, :GMSEC_STR, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueSTR, [self, :GMSEC_STR, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueI16, [self, :GMSEC_I16, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueU16, [self, :GMSEC_U16, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueI32, [self, :GMSEC_I32, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueU32, [self, :GMSEC_U32, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueF32, [self, :GMSEC_F32, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueF64, [self, :GMSEC_F64, GMSEC::Status], :void
+  attach_function :gmsec_SetFieldValueI64, [self, :GMSEC_I64, GMSEC::Status], :void
+  attach_function :gmsec_UnSetField, [self, GMSEC::Status], :void
+  attach_function :gmsec_LookupFieldType, [:string], :GMSEC_TYPE
+
 end
