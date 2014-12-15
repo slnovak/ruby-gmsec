@@ -30,17 +30,12 @@ describe GMSEC::Connection do
 
 
       before(:each) do
-
         subject.connect
-
-
       end
 
 
       after(:each) do
-
         subject.disconnect
-
       end
 
 
@@ -59,7 +54,6 @@ describe GMSEC::Connection do
         payload.keys.each do |key|
           expect(message[key]).to eq(payload[key])
         end
-
 
       end
 
