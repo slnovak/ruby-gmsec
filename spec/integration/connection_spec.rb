@@ -39,24 +39,40 @@ describe GMSEC::Connection do
 
         expect(message.subject).to eq("GMSEC.TEST.HELLO")
 
+        # Message and payload should agree.
         payload.keys.each do |key|
           expect(message[key]).to eq(payload[key])
         end
       end
 
-      it "interprets blocks as callbacks to message", integration: true do
+      it "interprets blocks as callbacks to messages", integration: true do
         subject.subscribe("GMSEC.TEST.*") do |connection, message|
           expect(message.subject).to eq("GMSEC.TEST.HELLO")
-          expect(message.length).to eq(3)
 
+          # Message and payload should agree.
           payload.keys.each do |key|
             expect(message[key]).to eq(payload[key])
           end
+
+          @pass = true
         end
 
         subject.publish("GMSEC.TEST.HELLO", payload)
 
-        sleep 1
+        # Need to dispatch first message
+        subject.messages.first
+
+        expect(@pass).to be(true)
+      end
+
+      it "enumerates received message via #messages", integration: true do
+        subject.subscribe("GMSEC.TEST.*")
+
+        5.times do
+          subject.publish("GMSEC.TEST.FOO", payload)
+        end
+
+        expect(subject.messages.to_a.length).to be(5)
       end
     end
   end

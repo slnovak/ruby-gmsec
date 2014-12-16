@@ -91,7 +91,8 @@ class GMSEC::Message
     Enumerator.new do |y|
       field = GMSEC::Field.new
       gmsec_MsgGetFirstField(self, field, status)
-      while 
+
+      while status.code != GMSEC_FIELDS_END_REACHED && status.code == GMSEC_STATUS_NO_ERROR
         y << field
         gmsec_MsgGetNextField(self, field, status)
       end

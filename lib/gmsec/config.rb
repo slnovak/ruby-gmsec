@@ -37,13 +37,9 @@ class GMSEC::Config
       key = key_pointer.read_pointer.read_string_to_null unless status.is_error?
       value = value_pointer.read_pointer.read_string_to_null unless status.is_error?
 
-      while status.code == GMSEC_STATUS_NO_ERROR
+      while status.code != GMSEC_CONFIG_END_REACHED && status.code == GMSEC_STATUS_NO_ERROR
         y << [key, value]
         gmsec_ConfigGetNext(self, key_pointer, value_pointer, status)
-
-        unless [GMSEC_STATUS_NO_ERROR, GMSEC_CONFIG_END_REACHED].include? status.code
-          raise RuntimeError.new "Error when reading config: #{status}"
-        end
 
         key = key_pointer.read_pointer.read_string_to_null unless status.is_error?
         value = value_pointer.read_pointer.read_string_to_null unless status.is_error?

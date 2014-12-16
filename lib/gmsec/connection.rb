@@ -46,19 +46,26 @@ class GMSEC::Connection
 
   def subscribe(subject, &block)
     if block_given?
-      callback = FFI::Function.new(:void, [find_type(:GMSEC_CONNECTION_OBJECT), find_type(:GMSEC_MESSAGE_OBJECT)], &block)
-      pointer = FFI::MemoryPointer.new(callback)
-      gmsec_SubscribeWCallback(self, subject, pointer, status)
+
+      callback = FFI::Function.new(:void, [find_type(:GMSEC_CONNECTION_OBJECT), find_type(:GMSEC_MESSAGE_OBJECT)]) do |native_connection, native_message|
+        connection = GMSEC::Connection.new(native_object: native_connection)
+        message = GMSEC::Message.new(native_object: native_message)
+
+        block.call(connection, message)
+      end
+
+      gmsec_SubscribeWCallback(self, subject, callback, status)
     else
       gmsec_Subscribe(self, subject, status)
     end
   end
 
-  def messages(timeout: 30, dispatch: true)
+  def messages(timeout: 1000, dispatch: true)
     Enumerator.new do |y|
-      until status.is_error?
-        pointer = FFI::MemoryPointer.new(GMSEC::Message.native_type)
-        gmsec_GetNextMsg(self, pointer, timeout, status)
+      pointer = FFI::MemoryPointer.new(GMSEC::Message.native_type)
+      gmsec_GetNextMsg(self, pointer, timeout, status)
+
+      while status.code != GMSEC_TIMEOUT_OCCURRED && status.code == 0
         message = GMSEC::Message.new(native_object: pointer.read_pointer)
 
         if dispatch
@@ -66,11 +73,16 @@ class GMSEC::Connection
         end
 
         y << message
+
+        gmsec_GetNextMsg(self, pointer, timeout, status)
       end
     end
   end
 
   def library_version
+    with_string_buffer do |pointer|
+      gmsec_GetLibraryVersion(self, pointer, status)
+    end
   end
 
   protected
