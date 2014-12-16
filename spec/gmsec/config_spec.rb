@@ -3,16 +3,13 @@ require 'spec_helper'
 describe GMSEC::Config do
 
   context "a new Config object" do
-
     it "add persists new configuration options" do
       subject["foo"] = "bar"
       expect(subject["foo"]).to eq("bar")
     end
-
   end
 
   context "a Config object with mixed data types" do
-
     subject do
       described_class.new.tap do |config|
         config["foo"] = "foo"
@@ -42,6 +39,5 @@ describe GMSEC::Config do
       expect(subject.values).to be_a(Enumerator)
       expect(subject.values.to_a).to eq([["42", "42"], ["bar", "bar"], ["foo", "foo"]])
     end
-
   end
 end

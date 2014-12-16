@@ -111,7 +111,6 @@ module GMSEC::Definitions
   class GMSEC_STATUS_STRUCT < FFI::Struct; end
 
   def self.included(base)
-
     base.instance_eval do
       typedef :char,        :GMSEC_CHAR
       typedef :char,        :GMSEC_I8
@@ -186,6 +185,5 @@ module GMSEC::Definitions
       level:    base.find_type(:LOG_LEVEL),
       time:     :double,
       message:  :string)
-
   end
 end

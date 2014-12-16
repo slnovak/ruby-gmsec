@@ -5,24 +5,19 @@ class GMSEC::Status
     gmsec_CreateStatus(pointer)
   end
 
-
   def is_error?
     gmsec_isStatusError(self) > 0
   end
-
 
   def to_s
     gmsec_GetStatusString(self)
   end
 
-
   def code
     gmsec_GetStatusCode(self)
   end
 
-
   protected
-
 
   attach_function :gmsec_CreateStatus, [:pointer], :void
   attach_function :gmsec_DestroyStatus, [:pointer], :void
@@ -32,5 +27,4 @@ class GMSEC::Status
   attach_function :gmsec_GetStatusCode, [self], :uint
   attach_function :gmsec_GetStatusCustomCode, [self], :int
   attach_function :gmsec_isStatusError, [self], :int
-
 end

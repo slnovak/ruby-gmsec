@@ -11,10 +11,3 @@ module GMSEC
   autoload :Field, 'gmsec/field'
   autoload :Message, 'gmsec/message'
 end
-# require 'gmsec/definitions'
-# require 'gmsec/api'
-# require 'gmsec/status'
-# require 'gmsec/config'
-# require 'gmsec/connection'
-# require 'gmsec/field'
-# require 'gmsec/message'

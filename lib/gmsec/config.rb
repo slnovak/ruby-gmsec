@@ -3,33 +3,26 @@ class GMSEC::Config
 
   has :status
 
-
   bind :GMSEC_CONFIG_OBJECT do |pointer|
     gmsec_CreateConfig(pointer, status)
   end
 
 
   def initialize(options={})
-
     options.each do |key, value|
       add_value(key, value)
     end
-
   end
-
 
   def [](key)
     get_value(key)
   end
 
-
   def []=(key, value)
     add_value(key, value)
   end
 
-
   def values
-
     Enumerator.new do |y|
       field = GMSEC::Field.new
 
@@ -45,9 +38,7 @@ class GMSEC::Config
       value = value_pointer.read_pointer.read_string_to_null unless status.is_error?
 
       while status.code == GMSEC_STATUS_NO_ERROR
-
         y << [key, value]
-
         gmsec_ConfigGetNext(self, key_pointer, value_pointer, status)
 
         unless [GMSEC_STATUS_NO_ERROR, GMSEC_CONFIG_END_REACHED].include? status.code
@@ -56,42 +47,27 @@ class GMSEC::Config
 
         key = key_pointer.read_pointer.read_string_to_null unless status.is_error?
         value = value_pointer.read_pointer.read_string_to_null unless status.is_error?
-
       end
-
     end
-
   end
-
 
   protected
 
-
   def add_value(key, value)
-
     gmsec_ConfigAddValue(self, key.to_s, value.to_s, status)
-
     get_value(key)
-
   end
 
-
   def get_value(key)
-
     buffer = FFI::Buffer.new(1024)
-
     pointer = FFI::MemoryPointer.new(buffer)
 
     gmsec_ConfigGetValue(self, key.to_s, pointer, status)
 
     pointer.read_pointer.read_string_to_null unless status.is_error?
-
   ensure
-
     buffer.clear
-
   end
-
 
   attach_function :gmsec_ConfigAddValue, [self, :string, :string, GMSEC::Status], :void
   attach_function :gmsec_ConfigClear, [self, GMSEC::Status], :void

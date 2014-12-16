@@ -4,10 +4,8 @@ class GMSEC::Field
   bind :GMSEC_FIELD_OBJECT do |pointer|
      gmsec_CreateField(pointer, status)
   end
-  
 
   has :status
-
 
   # Map GMSEC values to deftypes
   GMSEC_TYPEDEF = {
@@ -28,7 +26,6 @@ class GMSEC::Field
     GMSEC_TYPE_UNSET  => :unset,
     GMSEC_TYPE_USHORT => :ushort }
 
-
   TYPE_TO_GMSEC_VALUE = {
     bool:    GMSEC_TYPE_BOOL,
     char:    GMSEC_TYPE_CHAR,
@@ -47,7 +44,6 @@ class GMSEC::Field
     unset:   GMSEC_TYPE_UNSET,
     ushort:  GMSEC_TYPE_USHORT }
 
-
   RUBY_TO_GMSEC_TYPE = {
      TrueClass  => :bool,
      FalseClass => :bool,
@@ -55,9 +51,7 @@ class GMSEC::Field
      Fixnum     => :i32,
      Float      => :double }
 
-  
   def initialize(name=nil, value=nil)
-
     if name
       self.name = name
     end
@@ -65,39 +59,26 @@ class GMSEC::Field
     if value
       self.value = value
     end
-
   end
 
-
   def name
-
     with_string_buffer do |pointer|
       gmsec_GetFieldName(self, pointer, status)
     end
-
   end
-
 
   def name=(value)
     gmsec_SetFieldName(self, value.to_s, status)
   end
 
-
   def value
-
     field_type = "GMSEC_#{type.to_s.upcase}".to_sym
-
     pointer = FFI::MemoryPointer.new(find_type(field_type))
-
     send(get_field_value_method, self, pointer, status)
-
     read_pointer_value(pointer)
-
   end
 
-
   def value=(value)
-
     field_type = RUBY_TO_GMSEC_TYPE[value.class]
 
     if field_type.nil?
@@ -105,14 +86,10 @@ class GMSEC::Field
     end
 
     self.type = field_type
-
     send(set_field_value_method(value), self, value, status)
-
   end
 
-
   def type
-
     # Create a pointer to GMSEC_TYPE that we're going to read and convert to a symbol.
     pointer = FFI::MemoryPointer.new(find_type(:GMSEC_TYPE))
 
@@ -120,21 +97,14 @@ class GMSEC::Field
 
     # Default to GMSEC_STR if type is not registered in GMSEC_DEF
     GMSEC_TYPEDEF[pointer.read_ushort] || :str
-
   end
-
 
   def type=(value)
-
     field_type = TYPE_TO_GMSEC_VALUE[type]
-
     gmsec_SetFieldType(self, field_type, status)
-
   end
 
-
   protected
-
 
   def set_field_value_method(value)
     # Given a Ruby value, return the name of the corresponding SetFieldValue* method.
@@ -146,16 +116,13 @@ class GMSEC::Field
     end
 
     "gmsec_SetFieldValue#{type.to_s.upcase}"
-
   end
-
 
   def get_field_value_method
     "gmsec_GetFieldValue#{type.to_s.upcase.split("_").last}"
   end
 
   def read_pointer_value(pointer)
-
     case type
     when :char
       pointer.read_char
@@ -186,9 +153,7 @@ class GMSEC::Field
     else
       raise TypeError.new("#{type} is not a supported type.")
     end
-
   end
-
 
   attach_function :gmsec_CreateField, [:pointer, GMSEC::Status], :void
   attach_function :gmsec_DestroyField, [:pointer, GMSEC::Status], :void
@@ -233,5 +198,4 @@ class GMSEC::Field
   attach_function :gmsec_SetFieldValueI64, [self, :GMSEC_I64, GMSEC::Status], :void
   attach_function :gmsec_UnSetField, [self, GMSEC::Status], :void
   attach_function :gmsec_LookupFieldType, [:string], :GMSEC_TYPE
-
 end

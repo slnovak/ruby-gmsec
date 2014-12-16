@@ -5,16 +5,13 @@ class GMSEC::Connection
 
   has :config, :status
 
-
   GMSEC_MESSAGE_TYPE = {
     publish:  GMSEC_MSG_PUBLISH,
     reply:    GMSEC_MSG_REPLY,
     request:  GMSEC_MSG_REQUEST,
     unset:    GMSEC_MSG_UNSET }
 
-
   def connect
-
     # We initialize the connection assuming that a config is provided before connecting.
     initialize_native_object do |pointer|
       gmsec_CreateConnectionForConfig(config, pointer, status)
@@ -23,19 +20,15 @@ class GMSEC::Connection
     gmsec_Connect(self, status)
   end
 
-
   def connected?
     gmsec_IsConnected(self, status) == self.class.enum_type(:GMSEC_BOOL)[:GMSEC_TRUE]
   end
-
 
   def disconnect
     gmsec_Disconnect(self, status)
   end
 
-
   def publish(subject, payload, type: :publish, config: nil, is_default: false, &block)
-
     unless message_type = GMSEC_MESSAGE_TYPE[type]
       raise RuntimeError "Message type '#{type}' is not supported."
     end
@@ -49,37 +42,23 @@ class GMSEC::Connection
     message << payload
 
     gmsec_Publish(self, message, status)
-
   end
 
-
   def subscribe(subject, &block)
-
     if block_given?
-
       callback = FFI::Function.new(:void, [GMSEC::Connection, GMSEC::Message], &block)
-
       pointer = FFI::MemoryPointer(callback)
-
       gmsec_SubscribeWCallback(self, subject, pointer, status)
-
     else
-
       gmsec_Subscribe(self, subject, status)
-
     end
-
   end
 
   def messages(timeout: 30, dispatch: true)
-
     Enumerator.new do |y|
-
       until status.is_error?
         message = GMSEC::Message.new
-
         pointer = FFI::MemoryPointer.new(message)
-
         gmsec_GetNextMsg(self, pointer, timeout, status)
 
         if dispatch
@@ -87,20 +66,14 @@ class GMSEC::Connection
         end
 
         y << message
-
       end
-
     end
-
   end
 
   def library_version
-
   end
 
-
   protected
-
 
   attach_function :gmsec_CloneMessage, [self, GMSEC::Message, :pointer, GMSEC::Status], :void
   attach_function :gmsec_Connect, [self, GMSEC::Status], :void
