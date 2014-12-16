@@ -5,10 +5,6 @@ class GMSEC::Message
 
   bind :GMSEC_MESSAGE_OBJECT
 
-  def initialize
-    @native_object = FFI::MemoryPointer.new(self.class.native_type)
-  end
-
   def type
     pointer = FFI::MemoryPointer.new(find_type(:GMSEC_MSG_KIND))
     gmsec_GetMsgKind(self, pointer, status)
@@ -67,9 +63,9 @@ class GMSEC::Message
   end
 
   def [](name)
-    GMSEC::Field.new.tap do |field|
-      gmsec_MsgGetField(self, name.to_s, field, status)
-    end
+    field = GMSEC::Field.new
+    gmsec_MsgGetField(self, name.to_s, field, status)
+    field.value
   end
 
   def <<(data)
@@ -86,9 +82,9 @@ class GMSEC::Message
   end
 
   def length
-    length = 0
-    pointer = FFI::MemoryPointer.new(length)
+    pointer = FFI::MemoryPointer.new(find_type(:GMSEC_I32))
     gmsec_MsgGetFieldCount(self, pointer, status)
+    pointer.read_int32
   end
 
   def fields

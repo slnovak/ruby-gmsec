@@ -33,7 +33,7 @@ class GMSEC::Connection
       raise RuntimeError "Message type '#{type}' is not supported."
     end
 
-    pointer = FFI::MemoryPointer.new(find_type(:GMSEC_MESSAGE_OBJECT), 1)
+    pointer = FFI::MemoryPointer.new(GMSEC::Message.native_type)
 
     gmsec_CreateMessage(self, subject, message_type, pointer, status)
 
@@ -46,8 +46,8 @@ class GMSEC::Connection
 
   def subscribe(subject, &block)
     if block_given?
-      callback = FFI::Function.new(:void, [GMSEC::Connection, GMSEC::Message], &block)
-      pointer = FFI::MemoryPointer(callback)
+      callback = FFI::Function.new(:void, [find_type(:GMSEC_CONNECTION_OBJECT), find_type(:GMSEC_MESSAGE_OBJECT)], &block)
+      pointer = FFI::MemoryPointer.new(callback)
       gmsec_SubscribeWCallback(self, subject, pointer, status)
     else
       gmsec_Subscribe(self, subject, status)
@@ -57,9 +57,9 @@ class GMSEC::Connection
   def messages(timeout: 30, dispatch: true)
     Enumerator.new do |y|
       until status.is_error?
-        message = GMSEC::Message.new
-        pointer = FFI::MemoryPointer.new(message)
+        pointer = FFI::MemoryPointer.new(GMSEC::Message.native_type)
         gmsec_GetNextMsg(self, pointer, timeout, status)
+        message = GMSEC::Message.new(native_object: pointer.read_pointer)
 
         if dispatch
           gmsec_DispatchMsg(self, message, status)
