@@ -85,6 +85,20 @@ class GMSEC::Connection
     end
   end
 
+  def start_auto_dispatch
+    gmsec_StartAutoDispatch(self, status)
+  end
+
+  def stop_auto_dispatch
+    gmsec_StopAutoDispatch(self, status)
+  end
+
+  def dispatcher_status
+    GMSEC::Status.new.tap do |status|
+      gmsec_GetLastDispatcherStatus(self, status)
+    end
+  end
+
   protected
 
   attach_function :gmsec_CloneMessage, [self, GMSEC::Message, :pointer, GMSEC::Status], :void
@@ -112,6 +126,7 @@ class GMSEC::Connection
   attach_function :gmsec_SubscribeWCallback, [self, :string, :pointer, GMSEC::Status], :void
   attach_function :gmsec_UnSubscribe, [self, :string, GMSEC::Status], :void
   attach_function :gmsec_UnSubscribeWCallback, [self, :string, :pointer, GMSEC::Status], :void
+  attach_function :gmsec_GetLastDispatcherStatus, [self, GMSEC::Status], :void
 
   # From ConnectionFactory
   attach_function :gmsec_GetAPIVersion, [], :string

@@ -75,5 +75,36 @@ describe GMSEC::Connection do
         expect(subject.messages.to_a.length).to be(5)
       end
     end
+
+    context "using autodispatching", integration: true do
+      before(:each) do
+        subject.connect
+      end
+
+      after(:each) do
+        subject.stop_auto_dispatch
+        subject.disconnect
+      end
+
+      it "correctly autodispatches messages as they are received", integration: true do
+        @pass = 0
+
+        subject.subscribe("GMSEC.TEST.*") do |connection, message|
+          @pass += 1
+        end
+
+        subject.subscribe("GMSEC.TEST.FOO") do |connection, message|
+          @pass += 1
+        end
+
+        subject.start_auto_dispatch
+
+        subject.publish("GMSEC.TEST.FOO", {foo: :bar})
+
+        sleep 1
+
+        expect(@pass).to eq(2)
+      end
+    end
   end
 end

@@ -24,7 +24,6 @@ module GMSEC::API
         super(*args, **kwargs)
       end
     end
-
   end
 
   def self.extended(base)
@@ -56,7 +55,6 @@ module GMSEC::API
     base.send(:load_library)
     base.include GMSEC::Definitions
   end
-
 
   def bind(object_name, &block)
     native_type find_type(object_name)
@@ -104,17 +102,10 @@ module GMSEC::API
     end
   end
 
-
   def has(*objects)
-    # Allows to automatically add protected methods for objects like Config, Status, etc.
-    #
-    # Example:
-    #
-    # has :status, :config
-
     mapping = {
       config: GMSEC::Config,
-      status: GMSEC::Status }
+      status: GMSEC::Status}
 
     objects.select{|object| mapping.keys.include? object}.each do |object|
       define_method(object) do

@@ -24,7 +24,7 @@ class GMSEC::Field
     GMSEC_TYPE_U32    => :u32,
     GMSEC_TYPE_ULONG  => :ulong,
     GMSEC_TYPE_UNSET  => :unset,
-    GMSEC_TYPE_USHORT => :ushort }
+    GMSEC_TYPE_USHORT => :ushort}
 
   TYPE_TO_GMSEC_VALUE = {
     bool:    GMSEC_TYPE_BOOL,
@@ -42,14 +42,15 @@ class GMSEC::Field
     u32:     GMSEC_TYPE_U32,
     ulong:   GMSEC_TYPE_ULONG,
     unset:   GMSEC_TYPE_UNSET,
-    ushort:  GMSEC_TYPE_USHORT }
+    ushort:  GMSEC_TYPE_USHORT}
 
   RUBY_TO_GMSEC_TYPE = {
-     TrueClass  => :bool,
      FalseClass => :bool,
-     String     => :str,
      Fixnum     => :i32,
-     Float      => :double }
+     Float      => :double,
+     String     => :str,
+     Symbol     => :str,
+     TrueClass  => :bool}
 
   def initialize(name=nil, value=nil)
     if name
@@ -83,6 +84,10 @@ class GMSEC::Field
 
     if field_type.nil?
       raise TypeError.new("#{value.class} is not supported as a GMSEC type.")
+    end
+
+    if value.is_a? Symbol
+      value = value.to_s
     end
 
     self.type = field_type

@@ -44,6 +44,10 @@ class GMSEC::Config
         key = key_pointer.read_pointer.read_string_to_null unless status.is_error?
         value = value_pointer.read_pointer.read_string_to_null unless status.is_error?
       end
+
+      if status.code != GMSEC_CONFIG_END_REACHED
+        raise RuntimeError.new("Error reading config fields : #{status}")
+      end
     end
   end
 
