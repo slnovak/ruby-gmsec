@@ -11,6 +11,15 @@ class GMSEC::Connection
     request:  GMSEC_MSG_REQUEST,
     unset:    GMSEC_MSG_UNSET }
 
+  def initialize(config=nil, **config_options)
+    if config || !config_options.nil?
+      self.config = config_options.inject(config || GMSEC::Config.new) do |c, (k,v)|
+        c[k] = v
+        c
+      end
+    end
+  end
+
   def connect
     # We initialize the connection assuming that a config is provided before connecting.
     initialize_native_object do |pointer|
@@ -18,6 +27,10 @@ class GMSEC::Connection
     end
 
     gmsec_Connect(self, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Unable to connect: #{status}")
+    end
   end
 
   def connected?
@@ -26,37 +39,75 @@ class GMSEC::Connection
 
   def disconnect
     gmsec_Disconnect(self, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Unable to disconnect: #{status}")
+    end
   end
 
-  def publish(subject, payload, type: :publish, config: nil, is_default: false, &block)
-    unless message_type = GMSEC_MESSAGE_TYPE[type]
-      raise RuntimeError "Message type '#{type}' is not supported."
+  def new_message(subject=nil, message_type: :publish, default: true)
+    message_type = GMSEC_MESSAGE_TYPE[message_type].tap do |type|
+      if type.nil?
+        raise RuntimeError.new("Message type '#{message_type}' not supported.")
+      end
     end
 
     pointer = FFI::MemoryPointer.new(GMSEC::Message.native_type)
 
-    gmsec_CreateMessage(self, subject, message_type, pointer, status)
+    case default
+    when true
+      gmsec_CreateMessageDflt(self, pointer, status)
+    when false
+      gmsec_CreateMessage(self, subject, message_type, pointer, status)
+    end
 
-    message = GMSEC::Message.new(native_object: pointer.read_pointer)
-    
-    message << payload
+    GMSEC::Message.new(native_object: pointer.read_pointer).tap do |message|
+      if subject
+        message.subject = subject
+      end
+    end
+  end
+
+  def publish(payload=nil, subject: nil)
+    message = case payload
+              when Hash
+                new_message(subject).tap do |message|
+                  message << payload
+                end
+              when GMSEC::Message
+                payload
+              else
+                raise RuntimeError.new("Unable to publish payload of type #{payload.class}")
+              end
 
     gmsec_Publish(self, message, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Unable to publish message: #{status}")
+    end
   end
 
   def subscribe(subject, &block)
     if block_given?
-
       callback = FFI::Function.new(:void, [find_type(:GMSEC_CONNECTION_OBJECT), find_type(:GMSEC_MESSAGE_OBJECT)]) do |native_connection, native_message|
         connection = GMSEC::Connection.new(native_object: native_connection)
         message = GMSEC::Message.new(native_object: native_message)
 
-        block.call(connection, message)
+        case block.arity
+        when 1
+          block.call(message)
+        when 2
+          block.call(message, connection)
+        end
       end
 
       gmsec_SubscribeWCallback(self, subject, callback, status)
     else
       gmsec_Subscribe(self, subject, status)
+    end
+
+    if status.is_error?
+      raise RuntimeError.new("Unable to subscribe: #{status}")
     end
   end
 
@@ -80,17 +131,39 @@ class GMSEC::Connection
   end
 
   def library_version
-    with_string_buffer do |pointer|
+    with_string_pointer do |pointer|
       gmsec_GetLibraryVersion(self, pointer, status)
+
+      if status.is_error?
+        raise RuntimeError.new("Unable to get library version: #{status}")
+      end
+    end
+  end
+
+  def library_root_name
+    with_string_pointer do |pointer|
+      gmsec_GetLibraryRootName(self, pointer, status)
+
+      if status.is_error?
+        raise RuntimeError.new("Unable to get library root name: #{status}")
+      end
     end
   end
 
   def start_auto_dispatch
     gmsec_StartAutoDispatch(self, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Unable to start auto dispatch: #{status}")
+    end
   end
 
   def stop_auto_dispatch
     gmsec_StopAutoDispatch(self, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Unable to stop auto dispatch: #{status}")
+    end
   end
 
   def dispatcher_status
@@ -129,9 +202,7 @@ class GMSEC::Connection
   attach_function :gmsec_GetLastDispatcherStatus, [self, GMSEC::Status], :void
 
   # From ConnectionFactory
-  attach_function :gmsec_GetAPIVersion, [], :string
   attach_function :gmsec_CreateConnection, [:GMSEC_CONNECTION_TYPE, GMSEC::Config, :pointer, GMSEC::Status], :void
   attach_function :gmsec_CreateConnectionForType, [:GMSEC_CONNECTION_TYPE, GMSEC::Config, :pointer, GMSEC::Status], :void
   attach_function :gmsec_CreateConnectionForConfig, [GMSEC::Config, :pointer, GMSEC::Status], :void
-
 end

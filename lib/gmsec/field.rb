@@ -63,7 +63,7 @@ class GMSEC::Field
   end
 
   def name
-    with_string_buffer do |pointer|
+    with_string_pointer do |pointer|
       gmsec_GetFieldName(self, pointer, status)
     end
   end
@@ -151,7 +151,7 @@ class GMSEC::Field
       pointer.read_int64
     when :u32
       pointer.read_uint32
-    when :f32
+    when :f32, :float
       pointer.read_float
     when :f64
       pointer.read_double

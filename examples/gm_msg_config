@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+
+require 'gmsec'
+require 'commander'
+
+class Program
+  include Commander::Methods
+  include GMSEC
+
+  MESSAGE_TYPES = %w[
+    LOG ARCHIVE-MESSAGE-RETRIEVAL-REQUEST ARCHIVE-MESSAGE-RETRIEVAL-RESPONSE
+    DIRECTIVE-REQUEST DIRECTIVE-RESPONSE C2CX-CONFIGURATION C2CX-CONTROL
+    C2CX-DEVICE C2CX-HEARTBEAT C2CX-RESOURCE TELEMETRY-CCSDS-PACKET
+    TELEMETRY-CCSDS-FRAME REPLAY-TELEMETRY-REQUEST REPLAY-TELEMETRY-RESPONSE
+    MNEMONIC-VALUE-REQUEST MNEMONIC-VALUE-RESPONSE MNEMONIC-VALUE-DATA-MESSAGE
+    ARCHIVE-MNEMONIC-VALUE-REQUEST ARCHIVE-MNEMONIC-VALUE-RESPONSE
+    ARCHIVE-MNEMONIC-VALUE-DATA DATABASE-ATTRIBUTES-REQUEST
+    DB-RESPONSE-LIMIT-SET DB-RESPONSE-TEXT-CONVERSION DB-RESPONSE-CAL-CURVE
+    DB-RESPONSE-SHORT-DESCRIPTION DB-RESPONSE-LONG-DESCRIPTION
+    DB-RESPONSE-LIST-OF-MNEMONICS COMMAND-REQUEST COMMAND-RESPONSE 
+    PRODUCT-REQUEST PRODUCT-RESPONSE PRODUCT-MSG]
+
+  def run
+    program :name, 'gm_msg_config'
+    program :version, VERSION
+    program :description, 'Ruby implementation of the gm_msg_config.c example GMSEC program'
+
+    default_command :run
+
+    command :run do |c|
+      c.syntax = 'usage: gm_msg_config <filename.xml>'
+      c.description = 'Read the contents of a config file and prompt the user to which messages they would like to publish.'
+      c.action do |args, options|
+
+        say API.api_version
+
+        config_file = ConfigFile.new(args.first)
+
+        config = GMSEC::Config.from_config_file(config_file, "GMSEC-MESSAGE-BUS").tap do |config|
+          say config.to_xml
+        end
+
+        connection = Connection.new(config).tap do |connection|
+          connection.connect
+          say connection.library_version
+        end
+
+        while 
+          # Ask user for message type.
+          message_type = ask_for_message_type
+
+          # Create a new message from the connection.
+          message = connection.new_message.tap do |message|
+            message.load_fields_from_config_file(config_file, message_type)
+            say message.to_xml
+          end
+
+          connection.publish(message)
+
+          break unless agree("Display another format_message? (y/n)")
+        end
+      end
+    end
+
+    run!
+  end
+
+  def ask_for_message_type
+    MESSAGE_TYPES.each_with_index do |config_type, i|
+      say "#{i+1}.)\t#{config_type}"
+    end
+
+    message_number = ask(<<-TEXT.gsub(/^\s+/, ""), Integer) do |q|
+      ======================================================================
+      Select the number of the desired GMSEC Message format to be displayed:
+      ======================================================================
+    TEXT
+      q.in = 1..MESSAGE_TYPES.length
+    end
+
+    MESSAGE_TYPES[message_number]
+  end
+end
+
+Program.new.run if $0 == __FILE__

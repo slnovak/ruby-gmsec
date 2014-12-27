@@ -33,7 +33,7 @@ describe GMSEC::Connection do
       it "publishes and subscribes to messages", integration: true do
         subject.subscribe("GMSEC.TEST.*")
 
-        subject.publish("GMSEC.TEST.HELLO", payload)
+        subject.publish(payload, subject: "GMSEC.TEST.HELLO")
 
         message = subject.messages.first
 
@@ -46,7 +46,7 @@ describe GMSEC::Connection do
       end
 
       it "interprets blocks as callbacks to messages", integration: true do
-        subject.subscribe("GMSEC.TEST.*") do |connection, message|
+        subject.subscribe("GMSEC.TEST.*") do |message|
           expect(message.subject).to eq("GMSEC.TEST.HELLO")
 
           # Message and payload should agree.
@@ -57,7 +57,7 @@ describe GMSEC::Connection do
           @pass = true
         end
 
-        subject.publish("GMSEC.TEST.HELLO", payload)
+        subject.publish(payload, subject: "GMSEC.TEST.HELLO")
 
         # Need to dispatch first message
         subject.messages.first
@@ -69,7 +69,7 @@ describe GMSEC::Connection do
         subject.subscribe("GMSEC.TEST.*")
 
         5.times do
-          subject.publish("GMSEC.TEST.FOO", payload)
+          subject.publish(payload, subject: "GMSEC.TEST.FOO")
         end
 
         expect(subject.messages.to_a.length).to be(5)
@@ -89,17 +89,17 @@ describe GMSEC::Connection do
       it "correctly autodispatches messages as they are received", integration: true do
         @pass = 0
 
-        subject.subscribe("GMSEC.TEST.*") do |connection, message|
+        subject.subscribe("GMSEC.TEST.*") do |message|
           @pass += 1
         end
 
-        subject.subscribe("GMSEC.TEST.FOO") do |connection, message|
+        subject.subscribe("GMSEC.TEST.FOO") do |message|
           @pass += 1
         end
 
         subject.start_auto_dispatch
 
-        subject.publish("GMSEC.TEST.FOO", {foo: :bar})
+        subject.publish({foo: :bar}, subject: "GMSEC.TEST.FOO")
 
         sleep 1
 

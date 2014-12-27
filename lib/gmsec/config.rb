@@ -7,6 +7,10 @@ class GMSEC::Config
     gmsec_CreateConfig(pointer, status)
   end
 
+  def self.from_config_file(config_file, config_name)
+    config = config_file.get_config(config_name)
+    new(native_object: to_native(config))
+  end
 
   def initialize(options={})
     options.each do |key, value|
@@ -51,6 +55,12 @@ class GMSEC::Config
     end
   end
 
+  def to_xml
+    with_string_pointer do |pointer|
+      gmsec_ConfigToXML(self, pointer, status)
+    end
+  end
+
   protected
 
   def add_value(key, value)
@@ -59,14 +69,9 @@ class GMSEC::Config
   end
 
   def get_value(key)
-    buffer = FFI::Buffer.new(1024)
-    pointer = FFI::MemoryPointer.new(buffer)
-
-    gmsec_ConfigGetValue(self, key.to_s, pointer, status)
-
-    pointer.read_pointer.read_string_to_null unless status.is_error?
-  ensure
-    buffer.clear
+    with_string_pointer do |pointer|
+      gmsec_ConfigGetValue(self, key.to_s, pointer, status)
+    end
   end
 
   attach_function :gmsec_ConfigAddValue, [self, :string, :string, GMSEC::Status], :void

@@ -5,9 +5,17 @@ class GMSEC::Message
 
   bind :GMSEC_MESSAGE_OBJECT
 
+  def load_fields_from_config_file(config_file, message_name)
+    config_file.get_message(message_name, message: self)
+  end
+
   def type
     pointer = FFI::MemoryPointer.new(find_type(:GMSEC_MSG_KIND))
     gmsec_GetMsgKind(self, pointer, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error getting message type: #{status}")
+    end
 
     case pointer.read_ushort
     when GMSEC_MSG_PUBLISH
@@ -38,33 +46,62 @@ class GMSEC::Message
             end
 
     gmsec_SetMsgKind(self, value, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error setting message type: #{status}")
+    end
   end
 
   def subject
-    with_string_buffer do |pointer|
+    with_string_pointer do |pointer|
       gmsec_GetMsgSubject(self, pointer, status)
+
+      if status.is_error?
+        raise RuntimeError.new("Error getting message subject: #{status}")
+      end
     end
   end
 
   def subject=(subject)
     gmsec_SetMsgSubject(self, subject, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error setting message subject: #{status}")
+    end
   end
 
   def config=(config)
     gmsec_MsgSetConfig(self, config, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error setting message config: #{status}")
+    end
   end
 
   def clear_fields
     gmsec_MsgClearFields(self, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error clearing message fields: #{status}")
+    end
   end
 
   def clear_field(name)
     gmsec_MsgClearField(self, name.to_s, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error clearing message field: #{status}")
+    end
   end
 
   def [](name)
     field = GMSEC::Field.new
     gmsec_MsgGetField(self, name.to_s, field, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error getting message field: #{status}")
+    end
+
     field.value
   end
 
@@ -76,8 +113,12 @@ class GMSEC::Message
       data.each do |key, value|
         self << GMSEC::Field.new(key, value)
       end
-    else
+    elsif data
       raise TypeError.new("#{data.class} is not supported as a GMSEC field type.")
+    end
+
+    if status.is_error?
+      raise RuntimeError.new("Error adding data to message: #{status}")
     end
   end
 
@@ -96,21 +137,33 @@ class GMSEC::Message
         y << field
         gmsec_MsgGetNextField(self, field, status)
       end
+
+      unless status.code == GMSEC_FIELDS_END_REACHED
+        raise RuntimeError.new("Error reading message fields: #{status}")
+      end
     end
   end
 
   def to_h
-    Hash[fields.map{|field| [field.key, field.value]}]
+    Hash[fields.map{|field| [field.name, field.value]}]
   end
 
   def to_xml
-    with_string_buffer(8*1024) do |pointer|
+    with_string_pointer do |pointer|
       gmsec_MsgToXML(self, pointer, status)
+
+      if status.is_error?
+        raise RuntimeError.new("Error converting message to xml: #{status}")
+      end
     end
   end
 
   def from_xml(xml)
-    gmsec_MsgFromXML(self, xml, status)
+    gmsec_MsgFromXML(self, xml, status).tap do |_|
+      if status.is_error?
+        raise RuntimeError.new("Error converting xml to message: #{status}")
+      end
+    end
   end
 
   def size
@@ -121,6 +174,10 @@ class GMSEC::Message
 
   def time
     gmsec_MsgGetTime
+  end
+
+  def valid?
+    gmsec_isMsgValid(self) == self.class.enum_type(:GMSEC_BOOL)[:GMSEC_TRUE]
   end
 
   protected
@@ -141,4 +198,5 @@ class GMSEC::Message
   attach_function :gmsec_MsgFromXML, [self, :string, GMSEC::Status], :void
   attach_function :gmsec_MsgGetSize, [self, :pointer, GMSEC::Status], :void
   attach_function :gmsec_MsgGetTime, [], :string
+  attach_function :gmsec_isMsgValid, [self], :int
 end

@@ -120,7 +120,7 @@ module GMSEC::Definitions
       typedef :long_long,   :GMSEC_I64
       typedef :pointer,     :GMSEC_BIN
       typedef :pointer,     :GMSEC_BLOB
-      typedef :pointer,     :GMSEC_CONFIGFILED_OBJECT
+      typedef :pointer,     :GMSEC_CONFIGFILE_OBJECT
       typedef :pointer,     :GMSEC_CONFIGFILE_HANDLE
       typedef :pointer,     :GMSEC_CONFIG_HANDLE
       typedef :pointer,     :GMSEC_CONFIG_OBJECT

@@ -32,11 +32,11 @@ module GMSEC::API
     base.send :prepend, Finalizer
 
     class << base
-      def to_native(value, context)
+      def to_native(value, context=nil)
         value.instance_variable_get("@native_object")
       end
 
-      def from_native(value, context)
+      def from_native(value, context=nil)
         new(native_object: value)
       end
 
@@ -48,6 +48,10 @@ module GMSEC::API
         if instance.respond_to? :destroy!
           instance.destroy!
         end
+      end
+
+      def api_version
+        gmsec_GetAPIVersion
       end
     end
 
@@ -78,26 +82,11 @@ module GMSEC::API
       end
     end
 
-    define_method(:with_string_buffer) do |*sizes, &block|
-      if sizes.empty?
-        sizes = [1024]
-      end
-
-      begin
-        buffers = sizes.map{|size| FFI::Buffer.new(size)}
-        pointers = buffers.map{|buffer| FFI::MemoryPointer.new(buffer)}
-        block.call(*pointers)
-        strings = pointers.map{|pointer| pointer.read_pointer.read_string_to_null}
-
-        if strings.length == 1
-          strings.first
-        else
-          strings
-        end
-      ensure
-        buffers.each do |buffer|
-          buffer.clear
-        end
+    define_method(:with_string_pointer) do |&block|
+      pointer = FFI::MemoryPointer.new :pointer
+      block.call(pointer)
+      if pointer.read_pointer != nil
+        pointer.read_pointer.read_string_to_null
       end
     end
   end
@@ -108,6 +97,9 @@ module GMSEC::API
       status: GMSEC::Status}
 
     objects.select{|object| mapping.keys.include? object}.each do |object|
+      attr_accessor object
+
+      # Overwrite the getter method to memoize a new instance of the mapped object.
       define_method(object) do
         name = "@#{object}"
         instance_variable_set(name, instance_variable_get(name) || mapping[object].new)
@@ -152,4 +144,14 @@ module GMSEC::API
       find_lib('{lib,}GMSECAPI{,-?}')
     end
   end
+
+  extend self
+
+  load_library
+
+  def self.api_version
+    gmsec_GetAPIVersion
+  end
+
+  attach_function :gmsec_GetAPIVersion, [], :string
 end
