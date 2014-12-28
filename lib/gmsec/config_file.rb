@@ -7,6 +7,13 @@ class GMSEC::ConfigFile
   bind :GMSEC_CONFIGFILE_OBJECT
 
   def initialize(filename)
+    case
+    when filename.nil?
+      raise RuntimeError.new("Unable to create ConfigFile instance: filename not provided")
+    when !File.exist?(filename.to_s)
+      raise RuntimeError.new("Unable to create ConfigFile instance: '#{filename}' does not exist")
+    end
+
     initialize_native_object do |pointer|
       gmsec_CreateConfigFile(pointer, filename, status)
     end

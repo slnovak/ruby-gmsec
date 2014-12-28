@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+
+require 'gmsec'
+require 'commander'
+
+class Program
+  include Commander::Methods
+  include GMSEC
+
+  def run
+    program :name, 'gm_msg_config'
+    program :version, VERSION
+    program :description, 'Ruby implementation of the gmconfig.c example GMSEC program'
+
+    default_command :run
+
+    command :run do |c|
+      c.syntax = 'usage: gmconfig_c <filename>'
+      c.description = 'Read a configuration file and publish a preconfigured message several times'
+      c.action do |args, options|
+
+        say API.api_version
+
+        config_file = ConfigFile.new(args.first)
+
+        config = GMSEC::Config.from_config_file(config_file, "config1").tap do |config|
+          say config.to_xml
+        end
+
+        connection = Connection.new(config).tap do |connection|
+          connection.connect
+          say connection.library_version
+        end
+
+        subject = config_file.get_subscription("events").tap do |subject|
+          say "Subscribe to #{subject}"
+        end
+
+        message = connection.new_message.tap do |message|
+          message.load_fields_from_config_file(config_file, "msg1")
+          say message.to_xml
+        end
+
+        10.times do
+          say message.to_xml
+          connection.publish(message)
+        end
+      end
+    end
+
+    run!
+  end
+end
+
+Program.new.run if $0 == __FILE__
