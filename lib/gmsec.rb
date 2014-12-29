@@ -1,4 +1,5 @@
 require 'ffi'
+require 'terminal-table'
 
 require 'gmsec/version'
 

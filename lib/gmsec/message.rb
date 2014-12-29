@@ -98,11 +98,16 @@ class GMSEC::Message
     field = GMSEC::Field.new
     gmsec_MsgGetField(self, name.to_s, field, status)
 
-    if status.is_error?
+    case status.code
+    when GMSEC_STATUS_NO_ERROR
+      field.value
+    when !GMSEC_INVALID_FIELD_NAME
       raise RuntimeError.new("Error getting message field: #{status}")
     end
+  end
 
-    field.value
+  def []=(name, value)
+    self << GMSEC::Field.new(name, value)
   end
 
   def <<(data)
@@ -142,6 +147,10 @@ class GMSEC::Message
         raise RuntimeError.new("Error reading message fields: #{status}")
       end
     end
+  end
+
+  def to_s
+    ::Terminal::Table.new(title: subject, rows: to_h)
   end
 
   def to_h

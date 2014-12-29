@@ -172,6 +172,8 @@ class GMSEC::Field
       pointer.read_int32
     when :i64
       pointer.read_int64
+    when :u16
+      pointer.read_uint16
     when :u32
       pointer.read_uint32
     when :f32, :float
