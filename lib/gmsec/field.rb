@@ -7,24 +7,24 @@ class GMSEC::Field
 
   has :status
 
-  # Map GMSEC values to deftypes
+  # Map GMSEC values to deftypes. Note that we list backward compatible aliases first.
   GMSEC_TYPEDEF = {
-    GMSEC_TYPE_BOOL   => :bool,
-    GMSEC_TYPE_CHAR   => :char,
     GMSEC_TYPE_DOUBLE => :double,
-    GMSEC_TYPE_F32    => :f32,
-    GMSEC_TYPE_F64    => :f64,
     GMSEC_TYPE_FLOAT  => :float,
-    GMSEC_TYPE_I16    => :i16,
-    GMSEC_TYPE_I32    => :i32,
     GMSEC_TYPE_LONG   => :long,
     GMSEC_TYPE_SHORT  => :short,
+    GMSEC_TYPE_ULONG  => :ulong,
+    GMSEC_TYPE_USHORT => :ushort,
+    GMSEC_TYPE_BOOL   => :bool,
+    GMSEC_TYPE_CHAR   => :char,
+    GMSEC_TYPE_F32    => :f32,
+    GMSEC_TYPE_F64    => :f64,
+    GMSEC_TYPE_I16    => :i16,
+    GMSEC_TYPE_I32    => :i32,
     GMSEC_TYPE_STR    => :str,
     GMSEC_TYPE_U16    => :u16,
     GMSEC_TYPE_U32    => :u32,
-    GMSEC_TYPE_ULONG  => :ulong,
-    GMSEC_TYPE_UNSET  => :unset,
-    GMSEC_TYPE_USHORT => :ushort}
+    GMSEC_TYPE_UNSET  => :unset}
 
   TYPE_TO_GMSEC_VALUE = {
     bool:    GMSEC_TYPE_BOOL,
@@ -52,9 +52,13 @@ class GMSEC::Field
      Symbol     => :str,
      TrueClass  => :bool}
 
-  def initialize(name=nil, value=nil)
+  def initialize(name=nil, value=nil, type: nil)
     if name
       self.name = name
+    end
+
+    if type
+      self.type = type
     end
 
     if value
@@ -80,18 +84,33 @@ class GMSEC::Field
   end
 
   def value=(value)
-    field_type = RUBY_TO_GMSEC_TYPE[value.class]
-
-    if field_type.nil?
-      raise TypeError.new("#{value.class} is not supported as a GMSEC type.")
+    if type == :unset
+      # Guess what GMSEC type value is.
+      self.type = RUBY_TO_GMSEC_TYPE[value.class]
     end
 
-    if value.is_a? Symbol
-      value = value.to_s
-    end
+    # Determind method on value type
+    method = "gmsec_SetFieldValue#{type.to_s.upcase}"
 
-    self.type = field_type
-    send(set_field_value_method(value), self, value, status)
+    # Cast value based on value type.
+    value = case value
+            when Symbol
+              value.to_s
+            when TrueClass, FalseClass
+              value ? 1 : 0
+            else
+              value
+            end
+
+    # Cast value based on target type.
+    value = case type
+            when :char
+              value.ord
+            else
+              value
+            end
+
+    send(method, self, value, status)
   end
 
   def type
@@ -104,24 +123,20 @@ class GMSEC::Field
     GMSEC_TYPEDEF[pointer.read_ushort] || :str
   end
 
-  def type=(value)
-    field_type = TYPE_TO_GMSEC_VALUE[type]
-    gmsec_SetFieldType(self, field_type, status)
-  end
-
-  protected
-
-  def set_field_value_method(value)
-    # Given a Ruby value, return the name of the corresponding SetFieldValue* method.
-
-    type = RUBY_TO_GMSEC_TYPE[value.class]
-
+  def type=(type)
     if type.nil?
       raise TypeError.new("#{value.class} is not supported as a GMSEC type.")
     end
 
-    "gmsec_SetFieldValue#{type.to_s.upcase}"
+    field_type = TYPE_TO_GMSEC_VALUE[type]
+    gmsec_SetFieldType(self, field_type, status)
+
+    if status.is_error?
+      raise RuntimeError.new("Error in specifying type '#{type}': #{status}")
+    end
   end
+
+  protected
 
   def get_field_value_method
     "gmsec_GetFieldValue#{type.to_s.upcase.split("_").last}"
@@ -130,7 +145,7 @@ class GMSEC::Field
   def read_pointer_value(pointer)
     case type
     when :char
-      pointer.read_char
+      pointer.read_string(1)
     when :bool
       pointer.read_int == self.class.enum_type(:GMSEC_BOOL)[:GMSEC_TRUE]
     when :short
