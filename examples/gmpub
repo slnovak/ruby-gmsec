@@ -1,0 +1,76 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+
+require 'gmsec'
+require 'commander'
+
+class Program
+  include Commander::Methods
+  include GMSEC
+
+  def run
+    program :name, 'gm_msg_config'
+    program :version, VERSION
+    program :description, 'Ruby implementation of the gmconfig.c example GMSEC program'
+
+    default_command :run
+
+    command :run do |c|
+      c.syntax = 'usage: gmconfig_c <filename>'
+      c.description = 'Read a configuration file and publish a preconfigured message several times'
+      c.action do |args, options|
+
+        say API.api_version
+
+        config = GMSEC::Config.new.tap do |config|
+          args.each do |argument|
+            key, value = argument.split("=")
+            config[key] = value
+          end
+        end
+
+        subject = config["SUBJECT"] || "GMSEC.TEST.PUBLISH"
+        iterations = (config["ITERATIONS"] || 1).to_i
+        interval_ms = (config["INTERVAL_MS"] || 1000).to_i
+
+        connection = Connection.new(config).tap do |connection|
+          connection.connect
+          say connection.library_version
+        end
+
+        (1..iterations).each do |iteration|
+          value = iteration + 1
+
+          message = connection.new_message.tap do |message|
+            fields = [Field.new("C", "c", type: :char),
+                      Field.new("T", true, type: :bool),
+                      Field.new("F", false, type: :bool),
+                      Field.new("J", value, type: :i16),
+                      Field.new("K", value, type: :u16),
+                      Field.new("I", value, type: :i32),
+                      Field.new("COUNT", iteration, type: :i32),
+                      Field.new("U", value, type: :u32),
+                      Field.new("S", value, type: :str),
+                      Field.new("E", value, type: :f32),
+                      Field.new("D", value, type: :f64)]
+
+            fields.each do |field|
+              message << field
+            end
+          end
+
+          puts message.to_xml
+
+          connection.publish(message)
+
+          sleep interval_ms / 1000.0
+        end
+      end
+    end
+
+    run!
+  end
+end
+
+Program.new.run if $0 == __FILE__

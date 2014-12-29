@@ -104,10 +104,18 @@ class GMSEC::Field
 
     # Cast value based on target type.
     value = case type
+            when :bool
+              value ? 1 : 0
+            when :i16, :i32, :u16, :u32
+              value.to_i
+            when :f32, :f64
+              value.to_f
             when :char
               value.ord
+            when :str
+              value.to_s
             else
-              value
+              raise RuntimeError.new("Error in assigning value to field: type '#{type}' not supported")
             end
 
     send(method, self, value, status)
