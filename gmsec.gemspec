@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Stefan Novak']
   spec.email         = ['stefan@novak.io']
   spec.summary       = %q{Unofficial Ruby wrapper for NASA's GMSEC.}
-  spec.description   = %q{Unofficial Ruby wrapper for NASA's GMSEC. For more information, visit http://gmsec.gsfc.nasa.gov/}
+  spec.description   = %q{Unofficial Ruby wrapper for NASA's GMSEC. For more information, visit http://gmsec.gsfc.nasa.gov/.}
   spec.homepage      = 'http://gmsec.gsfc.nasa.gov/'
   spec.license       = 'MIT'
 
